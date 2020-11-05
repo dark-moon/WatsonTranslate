@@ -1,6 +1,15 @@
-package com.example.watsontranslate.network.data;
+package com.example.watsontranslate.database;
 
-public class Language {
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
+
+import com.example.watsontranslate.network.data.Language;
+
+@Entity(tableName = "languages")
+public class LanguageEntity {
+    @PrimaryKey(autoGenerate = true)
+    private int id;
     private String language;
     private String language_name;
     private String native_language_name;
@@ -10,6 +19,29 @@ public class Language {
     private boolean supported_as_source;
     private boolean supported_as_target;
     private boolean identifiable;
+
+    public LanguageEntity() { }
+
+    @Ignore
+    public LanguageEntity(Language language) {
+        this.language = language.getLanguage();
+        this.language_name = language.getLanguage_name();
+        this.native_language_name = language.getNative_language_name();
+        this.country_code = language.getCountry_code();
+        this.words_separated = language.isWords_separated();
+        this.direction = language.getDirection();
+        this.supported_as_source = language.isSupported_as_source();
+        this.supported_as_target = language.isSupported_as_target();
+        this.identifiable = language.isIdentifiable();
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getLanguage() {
         return language;
@@ -23,16 +55,16 @@ public class Language {
         return language_name;
     }
 
+    public void setLanguage_name(String language_name) {
+        this.language_name = language_name;
+    }
+
     public String getNative_language_name() {
         return native_language_name;
     }
 
     public void setNative_language_name(String native_language_name) {
         this.native_language_name = native_language_name;
-    }
-
-    public void setLanguage_name(String language_name) {
-        this.language_name = language_name;
     }
 
     public String getCountry_code() {

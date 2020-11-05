@@ -9,5 +9,19 @@
         android:id="@+id/homeFragment"
         android:name="com.example.watsontranslate.view.HomeFragment"
         android:label="fragment_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_homeFragment_to_languagesFragment"
+            app:destination="@id/languagesFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/languagesFragment"
+        android:name="com.example.watsontranslate.view.LanguagesFragment"
+        android:label="LanguagesFragment" >
+        <action
+            android:id="@+id/action_languagesFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
 </navigation>

@@ -6,7 +6,10 @@ import android.os.Bundle;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.fragment.NavHostFragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,10 +41,6 @@ public class HomeFragment extends Fragment {
         btnListLangs = root.findViewById(R.id.btn_list_langs);
         int lorum_picsum_id = getResources().getIdentifier("lorum_picsum_large", "drawable", getContext().getPackageName());
 
-        LanguagesViewModel viewModel = new ViewModelProvider(this,
-                new ViewModelProvider.AndroidViewModelFactory(this.getActivity().getApplication()))
-                .get(LanguagesViewModel.class);
-        viewModel.onLoadSupportedLanguages();
         doOnViewLayout(imageViewBackground, () -> {
             imageViewBackground.setImageBitmap(ImageUtil.decodeSampledBitmapFromResources(
                     getResources(),
@@ -67,10 +66,10 @@ public class HomeFragment extends Fragment {
                     btnListLangs.getHeight()));
         });
         btnListLangs.setBackgroundColor(Color.TRANSPARENT);
-
         btnListLangs.setOnClickListener(v -> {
-
+            NavHostFragment.findNavController(HomeFragment.this).navigate(R.id.action_homeFragment_to_languagesFragment);
         });
+
         return root;
     }
 

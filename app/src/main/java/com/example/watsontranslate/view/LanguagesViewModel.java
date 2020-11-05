@@ -8,68 +8,76 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.watsontranslate.network.TranslationBasicAuthInterceptor;
-import com.example.watsontranslate.network.WatsonTranslateService;
+import com.example.watsontranslate.LanguageRepository;
+import com.example.watsontranslate.network.data.Language;
 import com.example.watsontranslate.network.data.LanguagesList;
-import com.example.watsontranslate.tools.Constants;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import okhttp3.OkHttpClient;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class LanguagesViewModel extends AndroidViewModel {
 
     private final String TAG = "LanguagesViewModel";
     private final ExecutorService background;
-    private final MutableLiveData<LanguagesList> _supportedLanguages;
+    private final MutableLiveData<List<Language>> supportedLanguages;
+    private final MutableLiveData<Boolean> loading;
+
+    private final LanguageRepository repository;
 
 
     public LanguagesViewModel(@NonNull Application application) {
         super(application);
         background = Executors.newFixedThreadPool(2);
-        _supportedLanguages = new MutableLiveData<>();
+        supportedLanguages = new MutableLiveData<>();
+        loading = new MutableLiveData<>();
+        repository = new LanguageRepository(application);
+
     }
 
-    public LiveData<LanguagesList> get_supportedLanguages() {
-        return _supportedLanguages;
+    public LiveData<List<Language>> getSupportedLanguages() {
+        return supportedLanguages;
     }
+    public LiveData<Boolean> isLoading() { return loading; }
 
     public void onLoadSupportedLanguages() {
         background.execute(() -> {
-            OkHttpClient translationClient = new OkHttpClient.Builder()
-                    .addInterceptor(new TranslationBasicAuthInterceptor())
-                    .build();
-
-            Retrofit retrofit = new Retrofit.Builder()
-                    .baseUrl(Constants.TRANSLATOR_URL)
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .client(translationClient)
-                    .build();
-
-            WatsonTranslateService service = retrofit.create(WatsonTranslateService.class);
-
-            service.getSupportedLanguages().enqueue(new Callback<LanguagesList>() {
+            loading.postValue(true);
+            repository.getSupportedLanguagesFromDatabase(new LanguageRepository.OnLoadData<List<Language>>() {
                 @Override
-                public void onResponse(Call<LanguagesList> call, Response<LanguagesList> response) {
-                    if (response.isSuccessful()) {
-                        if (response.body() != null) {
-                            _supportedLanguages.postValue(response.body());
-                            Log.i(TAG, "onResponse: " + response.body().getLanguages().get(1).getNative_language_name());
-                        }
-                    }
+                public void onSuccess(List<Language> result) {
+                    loading.postValue(false);
+                    supportedLanguages.postValue(result);
+                    Log.i(TAG, "onSuccess: successfully retrieved data from database");
                 }
 
                 @Override
-                public void onFailure(Call<LanguagesList> call, Throwable t) {
-                    Log.i(TAG, "onFailure: " + t.getMessage());
+                public void onFailure(Throwable error) {
+                    Log.i(TAG, "onFailure: Data can't be retrieved from database");
+                    repository.getSupportedLanguagesRemote(new LanguageRepository.OnLoadData<LanguagesList>() {
+                        @Override
+                        public void onSuccess(LanguagesList result) {
+                            Log.i(TAG, "onSuccess: retrieved from server");
+                            saveLanguagesInDatabase(result.getLanguages());
+                            Log.i(TAG, "onSuccess: saved to database");
+                            loading.postValue(false);
+                            supportedLanguages.postValue(result.getLanguages());
+                            Log.i(TAG, "onSuccess: posted to view");
+                        }
+                        @Override
+                        public void onFailure(Throwable error) {
+                            Log.i(TAG, "onFailure: failed to rertrieve data from server");
+                        }
+                    });
                 }
             });
         });
+    }
+
+    private void saveLanguagesInDatabase(List<Language> languages) {
+        background.execute(() -> {
+            repository.saveLanguagesInDatabase(languages);
+        });
+
     }
 }
